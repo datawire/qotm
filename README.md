@@ -1,6 +1,6 @@
 # (Obscure) Quote of the Moment Service
 
-Supplemental material for Kubernetes Training
+Supplemental material for Kubernetes Training.
 
 # License
 
