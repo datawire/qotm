@@ -20,6 +20,7 @@ quotes = [
   "668: The Neighbor of the Beast."
 ]
 
+
 @app.route("/", methods=["GET"])
 def statement():
     return jsonify(quote=random.choice(quotes),
