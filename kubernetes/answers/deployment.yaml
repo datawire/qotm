@@ -3,7 +3,6 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: qotm
-  namespace: tutorial
 spec:
   replicas: 3
   strategy:
@@ -19,7 +18,3 @@ spec:
         ports:
         - name: http-api 
           containerPort: 5000
-        resources:
-          limits:
-            cpu: "0.1"
-            memory: 100Mi
