@@ -10,15 +10,6 @@ __version__ = "1.1"
 PORT=5000
 HOSTNAME=os.getenv("HOSTNAME")
 
-logging.basicConfig(
-    # filename=logPath,
-    level=logging.DEBUG, # if appDebug else logging.INFO,
-    format="%%(asctime)s QotM %s %%(levelname)s: %%(message)s" % __version__,
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-
-logging.info("initializing on %s:%d" % (HOSTNAME, PORT))
-
 from flask import Flask, jsonify, request, Response
 app = Flask(__name__)
 
@@ -213,4 +204,12 @@ def main():
     app.run(debug=True, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        # filename=logPath,
+        level=logging.DEBUG, # if appDebug else logging.INFO,
+        format="%%(asctime)s QotM %s %%(levelname)s: %%(message)s" % __version__,
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    logging.info("initializing on %s:%d" % (HOSTNAME, PORT))
     main()
