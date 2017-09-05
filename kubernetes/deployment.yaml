@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
       - name: qotm
-        image: datawire/qotm:1.0
+        image: datawire/qotm:1.1
+        imagePullPolicy: Always
         ports:
         - name: http-api 
           containerPort: 5000
