@@ -13,7 +13,7 @@ HOSTNAME=os.getenv("HOSTNAME")
 logging.basicConfig(
     # filename=logPath,
     level=logging.DEBUG, # if appDebug else logging.INFO,
-    format="%%(asctime)s ambassador %s %%(levelname)s: %%(message)s" % __version__,
+    format="%%(asctime)s QotM %s %%(levelname)s: %%(message)s" % __version__,
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
