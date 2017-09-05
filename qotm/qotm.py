@@ -1,10 +1,25 @@
 #!/usr/bin/env python
 
-import os
 import datetime
+import functools
+import logging
+import os
 import random
 
-from flask import Flask, jsonify, request
+__version__ = "1.1"
+PORT=5000
+HOSTNAME=os.getenv("HOSTNAME")
+
+logging.basicConfig(
+    # filename=logPath,
+    level=logging.DEBUG, # if appDebug else logging.INFO,
+    format="%%(asctime)s ambassador %s %%(levelname)s: %%(message)s" % __version__,
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+logging.info("initializing on %s:%d" % (HOSTNAME, PORT))
+
+from flask import Flask, jsonify, request, Response
 app = Flask(__name__)
 
 ######## Quote storage
@@ -27,17 +42,87 @@ quotes = [
 
 ######## Utilities
 
-def result(**kwargs):
-    """
-    Pack up a bunch of keyword args into a JSONified dictionary, and make sure
-    that the hostname and time are included.
-    """
+class RichStatus (object):
+    def __init__(self, ok, **kwargs):
+        self.ok = ok
+        self.info = kwargs
+        self.info['hostname'] = HOSTNAME
+        self.info['time'] = datetime.datetime.now().isoformat()
+        self.info['version'] = __version__
 
-    d = dict(kwargs)
-    d['hostname'] = os.getenv("HOSTNAME")
-    d['time'] = datetime.datetime.now().isoformat()
+    # Remember that __getattr__ is called only as a last resort if the key
+    # isn't a normal attr.
+    def __getattr__(self, key):
+        return self.info.get(key)
 
-    return jsonify(**d)
+    def __bool__(self):
+        return self.ok
+
+    def __nonzero__(self):
+        return bool(self)
+        
+    def __contains__(self, key):
+        return key in self.info
+
+    def __str__(self):
+        attrs = ["%s=%s" % (key, self.info[key]) for key in sorted(self.info.keys())]
+        astr = " ".join(attrs)
+
+        if astr:
+            astr = " " + astr
+
+        return "<RichStatus %s%s>" % ("OK" if self else "BAD", astr)
+
+    def toDict(self):
+        d = { 'ok': self.ok }
+
+        for key in self.info.keys():
+            d[key] = self.info[key]
+
+        return d
+
+    @classmethod
+    def fromError(self, error, **kwargs):
+        kwargs['error'] = error
+        return RichStatus(False, **kwargs)
+
+    @classmethod
+    def OK(self, **kwargs):
+        return RichStatus(True, **kwargs)
+
+def standard_handler(f):
+    func_name = getattr(f, '__name__', '<anonymous>')
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        rc = RichStatus.fromError("impossible error")
+        session = request.headers.get('x-qotm-session', None)
+
+        logging.debug("%s %s: session %s, handler %s" % (request.method, request.path, session, func_name))
+
+        try:
+            rc = f(*args, **kwds)
+        except Exception as e:
+            logging.exception(e)
+            rc = RichStatus.fromError("%s: %s %s failed: %s" % (func_name, request.method, request.path, e))
+
+        code = 200
+
+        if not rc:
+            if 'status_code' in rc:
+                code = rc.status_code
+            else:
+                code = 500
+
+        resp = jsonify(rc.toDict())
+        resp.status_code = code
+
+        if session:
+            resp.headers['x-qotm-session'] = session
+
+        return resp
+
+    return wrapper
 
 ######## REST endpoints
 
@@ -46,16 +131,18 @@ def result(**kwargs):
 # with an empty body.
 
 @app.route("/health", methods=["GET", "HEAD"])
+@standard_handler
 def health():
-    return "", 200
+    return RichStatus.OK(msg="QotM health check OK")
 
 ####
 # GET / returns a random quote as the 'quote' element of a JSON dictionary. It 
 # always returns a status of 200.
 
 @app.route("/", methods=["GET"])
+@standard_handler
 def statement():
-    return result(quote=random.choice(quotes)), 200
+    return RichStatus.OK(quote=random.choice(quotes))
 
 ####
 # GET /quote/quoteid returns a specific quote. 'quoteid' is the integer index
@@ -76,24 +163,25 @@ def statement():
 #   of what happened as the 'error' element, with status 400.
 
 @app.route("/quote/<idx>", methods=["GET", "PUT"])
+@standard_handler
 def specific_quote(idx):
     try:
         idx = int(idx)
     except ValueError:
-        return result(error="quote IDs must be numbers"), 400
+        return RichStatus.fromError("quote IDs must be numbers", status_code=400)
 
     if (idx < 0) or (idx >= len(quotes)):
-        return result(error="no quote ID %d" % idx), 400
+        return RichStatus.fromError("no quote ID %d" % idx, status_code=400)
 
     if request.method == "PUT":
         j = request.json
 
         if (not j) or ('quote' not in j):
-            return result(error="must supply 'quote' via JSON dictionary"), 400
+            return RichStatus.fromError("must supply 'quote' via JSON dictionary", status_code=400)
 
         quotes[idx] = j['quote']
 
-    return result(quote=quotes[idx]), 200
+    return RichStatus.OK(quote=quotes[idx])
 
 ####
 # POST /quote adds a new quote to our list. It requires a JSON dictionary
@@ -106,22 +194,23 @@ def specific_quote(idx):
 #   of what happened as the 'error' element, with status 400.
 
 @app.route("/quote", methods=["POST"])
+@standard_handler
 def new_quote():
     j = request.json
 
     if (not j) or ('quote' not in j):
-        return result(error="must supply 'quote' via JSON dictionary"), 400
+        return RichStatus.fromError("must supply 'quote' via JSON dictionary", status_code=400)
 
     quotes.append(j['quote'])
 
     idx = len(quotes) - 1
 
-    return result(quoteid=idx, quote=quotes[idx]), 200
+    return RichStatus.OK(quote=quotes[idx], quoteid=idx)
 
 ######## Mainline
 
 def main():
-    app.run(debug=True, host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
     main()
