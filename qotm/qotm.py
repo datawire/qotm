@@ -5,6 +5,8 @@ import functools
 import logging
 import os
 import random
+import signal
+import time
 
 __version__ = "1.1"
 PORT=5000
@@ -51,7 +53,7 @@ class RichStatus (object):
 
     def __nonzero__(self):
         return bool(self)
-        
+
     def __contains__(self, key):
         return key in self.info
 
@@ -127,7 +129,7 @@ def health():
     return RichStatus.OK(msg="QotM health check OK")
 
 ####
-# GET / returns a random quote as the 'quote' element of a JSON dictionary. It 
+# GET / returns a random quote as the 'quote' element of a JSON dictionary. It
 # always returns a status of 200.
 
 @app.route("/", methods=["GET"])
@@ -138,7 +140,7 @@ def statement():
 ####
 # GET /quote/quoteid returns a specific quote. 'quoteid' is the integer index
 # of the quote in our array above.
-# 
+#
 # - If all goes well, it returns a JSON dictionary with the requested quote as
 #   the 'quote' element, with status 200.
 # - If something goes wrong, it returns a JSON dictionary with an explanation
@@ -146,7 +148,7 @@ def statement():
 #
 # PUT /quote/quotenum updates a specific quote. It requires a JSON dictionary
 # as the PUT body, with the the new quote contained in the 'quote' dictionary
-# element. 
+# element.
 #
 # - If all goes well, it returns the new quote as if you'd requested it using
 #   the GET verb for this endpoint.
@@ -177,7 +179,7 @@ def specific_quote(idx):
 ####
 # POST /quote adds a new quote to our list. It requires a JSON dictionary
 # as the POST body, with the the new quote contained in the 'quote' dictionary
-# element. 
+# element.
 #
 # - If all goes well, it returns a JSON dictionary with the new quote's ID as
 #   'quoteid', and the new quote as 'quote', with a status of 200.
@@ -197,6 +199,15 @@ def new_quote():
     idx = len(quotes) - 1
 
     return RichStatus.OK(quote=quotes[idx], quoteid=idx)
+
+@app.route("/crash", methods=["GET"])
+@standard_handler
+def crash():
+    logging.warning("dying in 1 seconds")
+    time.sleep(1)
+    os.kill(os.getpid(), signal.SIGTERM)
+    time.sleep(1)
+    os.kill(os.getpid(), signal.SIGKILL)
 
 ######## Mainline
 
