@@ -1,20 +1,22 @@
+{% set suffix = '-canary' if env.CANARY else '' %}
+{% set name = '%s%s' % (service.name, suffix) %}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{service.name}}
+  name: {{name}}
 spec:
   selector:
-    app: {{service.name}}
+    app: {{name}}
   ports:
     - port: 80
       targetPort: http-api
-  type: NodePort
+  type: ClusterIP
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: {{service.name}}
+  name: {{name}}
 spec:
   replicas: 2
   strategy:
@@ -22,10 +24,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{service.name}}
+        app: {{name}}
     spec:
       containers:
-      - name: {{service.name}}
+      - name: {{name}}
         image: {{build.images["Dockerfile"]}}
         imagePullPolicy: Always
         ports:
