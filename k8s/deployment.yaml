@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 {% set suffix = '-canary' if env.CANARY else '' %}
 {% set name = '%s%s' % (service.name, suffix) %}
+=======
+>>>>>>> f00febe942af73ce8b055a2adb660fa751a5bea5
 ---
 apiVersion: v1
 kind: Service
 metadata:
+<<<<<<< HEAD
   name: {{name}}
 spec:
   selector:
@@ -12,11 +16,25 @@ spec:
     - port: 80
       targetPort: http-api
   type: ClusterIP
+=======
+  name: {{service.name}}
+spec:
+  selector:
+    app: {{service.name}}
+  ports:
+    - port: 80
+      targetPort: http-api
+  type: NodePort
+>>>>>>> f00febe942af73ce8b055a2adb660fa751a5bea5
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
+<<<<<<< HEAD
   name: {{name}}
+=======
+  name: {{service.name}}
+>>>>>>> f00febe942af73ce8b055a2adb660fa751a5bea5
 spec:
   replicas: 2
   strategy:
@@ -24,10 +42,17 @@ spec:
   template:
     metadata:
       labels:
+<<<<<<< HEAD
         app: {{name}}
     spec:
       containers:
       - name: {{name}}
+=======
+        app: {{service.name}}
+    spec:
+      containers:
+      - name: {{service.name}}
+>>>>>>> f00febe942af73ce8b055a2adb660fa751a5bea5
         image: {{build.images["Dockerfile"]}}
         imagePullPolicy: Always
         ports:
