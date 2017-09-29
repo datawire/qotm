@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: qotm
 spec:
-  replicas: 2
+  replicas: 3
   strategy:
     type: RollingUpdate
   template:
