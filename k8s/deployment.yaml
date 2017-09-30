@@ -1,4 +1,4 @@
-{% set suffix = '-canary' if env.CANARY else '' %}
+{% set suffix = '-canary' if env.get('CANARY') else '' %}
 {% set name = '%s%s' % (service.name, suffix) %}
 ---
 apiVersion: v1
