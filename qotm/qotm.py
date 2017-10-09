@@ -135,6 +135,7 @@ def health():
 @app.route("/", methods=["GET"])
 @standard_handler
 def statement():
+    # XXX time.sleep(0.5)
     return RichStatus.OK(quote=random.choice(quotes))
 
 ####
