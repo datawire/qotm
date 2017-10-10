@@ -90,8 +90,10 @@ def standard_handler(f):
     def wrapper(*args, **kwds):
         rc = RichStatus.fromError("impossible error")
         session = request.headers.get('x-qotm-session', None)
+        username = request.headers.get('x-authenticated-as', None)
 
-        logging.debug("%s %s: session %s, handler %s" % (request.method, request.path, session, func_name))
+        logging.debug("%s %s: session %s, username %s, handler %s" %
+                      (request.method, request.path, session, username, func_name))
 
         try:
             rc = f(*args, **kwds)
@@ -100,6 +102,14 @@ def standard_handler(f):
             rc = RichStatus.fromError("%s: %s %s failed: %s" % (func_name, request.method, request.path, e))
 
         code = 200
+
+        # This, candidly, is a bit of a hack.
+
+        if session:
+            rc.info['session'] = session
+
+        if username:
+            rc.info['username'] = username
 
         if not rc:
             if 'status_code' in rc:
