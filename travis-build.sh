@@ -85,7 +85,7 @@ if onmaster; then
     $ECHO git tag -a "v${VERSION}" -m "v${VERSION}"
 
     # ...and push the tag.
-    $ECHO git push --tags https://d6e-automation:${GH_TOKEN}@github.com/datawire/ambassador.git master
+    $ECHO git push --tags https://d6e-automation:${GH_TOKEN}@github.com/datawire/qotm.git master
 else
     # If not on master, don't tag...
     echo "not on master; not tagging"
