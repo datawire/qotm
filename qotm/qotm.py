@@ -8,7 +8,7 @@ import random
 import signal
 import time
 
-__version__ = "1.2"
+__version__ = "1.3"
 PORT=5000
 HOSTNAME=os.getenv("HOSTNAME")
 
