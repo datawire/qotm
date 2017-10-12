@@ -82,7 +82,7 @@ $ECHO make
 
 if onmaster; then
     # ...and, if we're on master, tag this version...
-    $ECHO make VERSION=${VERSION} tag
+    $ECHO git tag -a v$(VERSION) -m "v$(VERSION)"
 
     # ...and push the tag.
     $ECHO git push --tags https://d6e-automation:${GH_TOKEN}@github.com/datawire/ambassador.git master
