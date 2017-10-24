@@ -4,10 +4,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{name}}
+  name: {{build.name}}
 spec:
   selector:
-    app: {{name}}
+    app: {{build.name}}
   ports:
     - port: 80
       targetPort: http-api
@@ -16,7 +16,7 @@ spec:
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: {{name}}
+  name: {{build.name}}
 spec:
   replicas: 2
   strategy:
@@ -24,10 +24,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{name}}
+        app: {{build.name}}
     spec:
       containers:
-      - name: {{name}}
+      - name: {{build.name}}
         image: {{build.images["Dockerfile"]}}
         imagePullPolicy: Always
         ports:
