@@ -1,13 +1,12 @@
 FROM alpine:latest as dev-env
 RUN apk add --no-cache \
-    python \
-    python-dev \
-    py-pip \
+    python3 \
+    python3-dev \
     bash \
     curl
 WORKDIR /service
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 EXPOSE 5000
 
 FROM python:3-alpine
