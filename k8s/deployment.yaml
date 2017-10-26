@@ -1,10 +1,21 @@
-{% set suffix = '-canary' if env.get('CANARY') else '' %}
-{% set name = '%s%s' % (service.name, suffix) %}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{build.name}}
+  {%- if "endpoint" in build.profile %}
+  annotations:
+    ambassador: |
+      ---
+      apiVersion: ambassador/v1
+      kind: Mapping
+      name: {{build.name}}-mapping
+      prefix: {{build.profile.endpoint}}
+      service: {{build.name}}
+      {%- if "weight" in build.profile %}
+      weight: {{build.profile.weight}}
+      {%- endif %}
+  {%- endif %}
 spec:
   selector:
     app: {{build.name}}
