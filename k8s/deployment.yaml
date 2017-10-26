@@ -1,13 +1,24 @@
-{% set suffix = '-canary' if env.get('CANARY') else '' %}
-{% set name = '%s%s' % (service.name, suffix) %}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{name}}
+  name: {{build.name}}
+  {%- if "endpoint" in build.profile %}
+  annotations:
+    ambassador: |
+      ---
+      apiVersion: ambassador/v1
+      kind: Mapping
+      name: {{build.name}}-mapping
+      prefix: {{build.profile.endpoint}}
+      service: {{build.name}}
+      {%- if "weight" in build.profile %}
+      weight: {{build.profile.weight}}
+      {%- endif %}
+  {%- endif %}
 spec:
   selector:
-    app: {{name}}
+    app: {{build.name}}
   ports:
     - port: 80
       targetPort: http-api
@@ -16,7 +27,7 @@ spec:
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: {{name}}
+  name: {{build.name}}
 spec:
   replicas: 2
   strategy:
@@ -24,10 +35,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{name}}
+        app: {{build.name}}
     spec:
       containers:
-      - name: {{name}}
+      - name: {{build.name}}
         image: {{build.images["Dockerfile"]}}
         imagePullPolicy: Always
         ports:
