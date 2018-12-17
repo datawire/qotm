@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qotm
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v0
+      kind:  Mapping
+      name:  qotm_mapping
+      prefix: /qotm/
+      service: qotm
+spec:
+  selector:
+    app: qotm
+  ports:
+    - port: 80
+      targetPort: 9900
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: qotm
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+     labels:
+        app: qotm
+    spec:
+      containers:
+      - name: qotm
+        image: datawire/qotm:1.1
+        ports:
+        - name: http-api
+          containerPort: 5000
+        resources:
+          limits:
+            cpu: "0.1"
+            memory: 100Mi
+      - env:
+        - name: APPNAME
+          value: qotm
+        - name: APPPORT
+          value: "5000"
+        image: ark3/telepresence-sidecar:18
+        name: traffic-sidecar
+        ports:
+        - containerPort: 9900

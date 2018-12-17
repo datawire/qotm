@@ -145,8 +145,9 @@ def health():
 @app.route("/", methods=["GET"])
 @standard_handler
 def statement():
-    # XXX time.sleep(0.5)
+    # return RichStatus.OK(quote="Telepresence rocks!")
     return RichStatus.OK(quote=random.choice(quotes))
+    
 
 ####
 # GET /quote/quoteid returns a specific quote. 'quoteid' is the integer index
