@@ -1,10 +1,10 @@
 ---
-apiVersion: apps/v1beta1
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: qotm
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
   template:
@@ -15,7 +15,16 @@ spec:
       containers:
       - name: qotm
         image: datawire/qotm:1.2
-        imagePullPolicy: Always
         ports:
         - name: http-api
           containerPort: 5000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 3
+        resources:
+          limits:
+            cpu: "0.1"
+            memory: 100Mi

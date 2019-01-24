@@ -224,12 +224,12 @@ def crash():
 ######## Mainline
 
 def main():
-    app.run(debug=True, host="0.0.0.0", port=PORT)
+    app.run(debug=False, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
     logging.basicConfig(
         # filename=logPath,
-        level=logging.DEBUG, # if appDebug else logging.INFO,
+        level=logging.INFO, # if appDebug else logging.INFO,
         format="%%(asctime)s QotM %s %%(levelname)s: %%(message)s" % __version__,
         datefmt="%Y-%m-%d %H:%M:%S"
     )
