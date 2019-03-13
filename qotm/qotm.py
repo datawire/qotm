@@ -29,9 +29,6 @@ def get_rpm():
         delta = now - t
         if delta.seconds <= 60:
             count += 1
-        if count > int(REQUEST_LIMIT):
-            del request_timestamps[count:]
-            return count
     return count
 
 # Quote storage
