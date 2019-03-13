@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from flask import Flask, jsonify, request, Response
 import datetime
 import functools
 import logging
@@ -9,31 +10,32 @@ import signal
 import time
 
 __version__ = "1.3"
-PORT=5000
-HOSTNAME=os.getenv("HOSTNAME")
+PORT = os.getenv("PORT", 5000)
+HOSTNAME = os.getenv("HOSTNAME")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-from flask import Flask, jsonify, request, Response
 app = Flask(__name__)
 
-######## Quote storage
+# Quote storage
 #
 # Obviously, this would more typically involve a persistent backing store. That's not
 # really needed for a demo though.
 
 quotes = [
-  "Abstraction is ever present.",
-  "A late night does not make any sense.",
-  "A principal idea is omnipresent, much like candy.",
-  "Nihilism gambles with lives, happiness, and even destiny itself!",
-  "The light at the end of the tunnel is interdependent on the relatedness of motivation, subcultures, and management.",
-  "Utter nonsense is a storyteller without equal.",
-  "Non-locality is the driver of truth. By summoning, we vibrate.",
-  "A small mercy is nothing at all?",
-  "The last sentence you read is often sensible nonsense.",
-  "668: The Neighbor of the Beast."
+    "Abstraction is ever present.",
+    "A late night does not make any sense.",
+    "A principal idea is omnipresent, much like candy.",
+    "Nihilism gambles with lives, happiness, and even destiny itself!",
+    "The light at the end of the tunnel is interdependent on the relatedness of motivation, subcultures, and management.",
+    "Utter nonsense is a storyteller without equal.",
+    "Non-locality is the driver of truth. By summoning, we vibrate.",
+    "A small mercy is nothing at all?",
+    "The last sentence you read is often sensible nonsense.",
+    "668: The Neighbor of the Beast."
 ]
 
-######## Utilities
+# Utilities
+
 
 class RichStatus (object):
     def __init__(self, ok, **kwargs):
@@ -58,7 +60,8 @@ class RichStatus (object):
         return key in self.info
 
     def __str__(self):
-        attrs = ["%s=%s" % (key, self.info[key]) for key in sorted(self.info.keys())]
+        attrs = ["%s=%s" % (key, self.info[key])
+                 for key in sorted(self.info.keys())]
         astr = " ".join(attrs)
 
         if astr:
@@ -67,7 +70,7 @@ class RichStatus (object):
         return "<RichStatus %s%s>" % ("OK" if self else "BAD", astr)
 
     def toDict(self):
-        d = { 'ok': self.ok }
+        d = {'ok': self.ok}
 
         for key in self.info.keys():
             d[key] = self.info[key]
@@ -83,6 +86,7 @@ class RichStatus (object):
     def OK(self, **kwargs):
         return RichStatus(True, **kwargs)
 
+
 def standard_handler(f):
     func_name = getattr(f, '__name__', '<anonymous>')
 
@@ -95,11 +99,16 @@ def standard_handler(f):
         logging.debug("%s %s: session %s, username %s, handler %s" %
                       (request.method, request.path, session, username, func_name))
 
+        headers_string = ', '.join("{!s}={!r}".format(key, val)
+                                   for (key, val) in request.headers.items())
+        logging.debug("headers: %s" % (headers_string))
+
         try:
             rc = f(*args, **kwds)
         except Exception as e:
             logging.exception(e)
-            rc = RichStatus.fromError("%s: %s %s failed: %s" % (func_name, request.method, request.path, e))
+            rc = RichStatus.fromError("%s: %s %s failed: %s" % (
+                func_name, request.method, request.path, e))
 
         code = 200
 
@@ -127,11 +136,12 @@ def standard_handler(f):
 
     return wrapper
 
-######## REST endpoints
+# REST endpoints
 
 ####
 # GET /health does a basic health check. It always returns a status of 200
 # with an empty body.
+
 
 @app.route("/health", methods=["GET", "HEAD"])
 @standard_handler
@@ -142,12 +152,13 @@ def health():
 # GET / returns a random quote as the 'quote' element of a JSON dictionary. It
 # always returns a status of 200.
 
+
 @app.route("/", methods=["GET"])
 @standard_handler
 def statement():
     # return RichStatus.OK(quote="Telepresence rocks!")
     return RichStatus.OK(quote=random.choice(quotes))
-    
+
 
 ####
 # GET /quote/quoteid returns a specific quote. 'quoteid' is the integer index
@@ -198,6 +209,7 @@ def specific_quote(idx):
 # - If something goes wrong, it returns a JSON dictionary with an explanation
 #   of what happened as the 'error' element, with status 400.
 
+
 @app.route("/quote", methods=["POST"])
 @standard_handler
 def new_quote():
@@ -212,6 +224,7 @@ def new_quote():
 
     return RichStatus.OK(quote=quotes[idx], quoteid=idx)
 
+
 @app.route("/crash", methods=["GET"])
 @standard_handler
 def crash():
@@ -221,15 +234,17 @@ def crash():
     time.sleep(1)
     os.kill(os.getpid(), signal.SIGKILL)
 
-######## Mainline
+# Mainline
+
 
 def main():
     app.run(debug=False, host="0.0.0.0", port=PORT)
 
+
 if __name__ == "__main__":
     logging.basicConfig(
         # filename=logPath,
-        level=logging.INFO, # if appDebug else logging.INFO,
+        level=LOG_LEVEL,  # if appDebug else logging.INFO,
         format="%%(asctime)s QotM %s %%(levelname)s: %%(message)s" % __version__,
         datefmt="%Y-%m-%d %H:%M:%S"
     )
