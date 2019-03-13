@@ -13,6 +13,7 @@ __version__ = "1.3"
 PORT = os.getenv("PORT", 5000)
 HOSTNAME = os.getenv("HOSTNAME")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+REQUEST_LIMIT = os.getenv("REQUEST_LIMIT", 5)
 
 app = Flask(__name__)
 
@@ -24,10 +25,15 @@ def get_rpm():
     count = 0
 
     global request_timestamps
+    logging.info(len(request_timestamps))
     for t in request_timestamps:
         delta = now - t
         if delta.seconds <= 60:
             count += 1
+        if count > REQUEST_LIMIT:
+            del request_timestamps[count:]
+            logging.info(len(request_timestamps))
+            return count
     return count
 
 @app.before_request
@@ -180,8 +186,8 @@ def statement():
 
 ####
 # GET /limited/ calls get_rpm to get the requests per minute to the endpoint.
-# If less than 5, it returns a random quote same as the method above, if 
-# greater, it returns a 500 to simulate an overloaded server.
+# If less than REQUEST_LIMIT, it returns a random quote same as the method 
+# above. If greater, it returns a 500 to simulate an overloaded server.
 #
 # GET /limited/clear clears the global array that stores timestamps used to
 # check if a request is over the limit.
