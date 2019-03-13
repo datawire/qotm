@@ -16,6 +16,25 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 app = Flask(__name__)
 
+request_timestamps = []
+
+def get_rpm():
+    now = datetime.datetime.utcnow()
+
+    count = 0
+
+    global request_timestamps
+    for t in request_timestamps:
+        delta = now - t
+        if delta.seconds <= 60:
+            count += 1
+    return count
+
+@app.before_request
+def record_request_timestamp():
+    global request_timestamps
+    request_timestamps.append(datetime.datetime.utcnow())
+
 # Quote storage
 #
 # Obviously, this would more typically involve a persistent backing store. That's not
@@ -158,6 +177,34 @@ def health():
 def statement():
     # return RichStatus.OK(quote="Telepresence rocks!")
     return RichStatus.OK(quote=random.choice(quotes))
+
+####
+# GET /limited/ calls get_rpm to get the requests per minute to the endpoint.
+# If less than 5, it returns a random quote same as the method above, if 
+# greater, it returns a 500 to simulate an overloaded server.
+#
+# GET /limited/clear clears the global array that stores timestamps used to
+# check if a request is over the limit.
+
+
+@app.route("/limited/", methods=["GET"])
+@standard_handler
+def request_limited():
+
+    if get_rpm() > 5:
+        return "App Overloaded", 500
+    
+    return RichStatus.OK(quote=random.choice(quotes))
+
+@app.route("/limited/clear", methods=["GET"])
+@standard_handler
+def clear_timestamps():
+
+    global request_timestamps
+    request_timestamps = []
+
+    return RichStatus.OK()
+
 
 
 ####
