@@ -25,21 +25,14 @@ def get_rpm():
     count = 0
 
     global request_timestamps
-    logging.info(len(request_timestamps))
     for t in request_timestamps:
         delta = now - t
         if delta.seconds <= 60:
             count += 1
-        if count > REQUEST_LIMIT:
+        if count > int(REQUEST_LIMIT):
             del request_timestamps[count:]
-            logging.info(len(request_timestamps))
             return count
     return count
-
-@app.before_request
-def record_request_timestamp():
-    global request_timestamps
-    request_timestamps.append(datetime.datetime.utcnow())
 
 # Quote storage
 #
@@ -197,7 +190,10 @@ def statement():
 @standard_handler
 def request_limited():
 
-    if get_rpm() > 5:
+    global request_timestamps
+    request_timestamps.append(datetime.datetime.utcnow())
+
+    if get_rpm() > int(REQUEST_LIMIT):
         return "App Overloaded", 500
     
     return RichStatus.OK(quote=random.choice(quotes))
