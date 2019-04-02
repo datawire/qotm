@@ -8,16 +8,34 @@ import os
 import random
 import signal
 import time
+import requests
 
 __version__ = "1.3"
 PORT = os.getenv("PORT", 5000)
 HOSTNAME = os.getenv("HOSTNAME")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 REQUEST_LIMIT = os.getenv("REQUEST_LIMIT", 5)
+CONSUL_IP = os.getenv("CONSUL_IP", "host.docker.internal")
+POD_IP = os.getenv("POD_IP")
 
 app = Flask(__name__)
 
 request_timestamps = []
+
+def register_consul():
+    url = "http://%s:8500/v1/catalog/register" % CONSUL_IP
+    svc = "%s-consul" % HOSTNAME
+    payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 80}}
+
+    logging.info(url)
+    logging.info(payload)
+    try:
+        r = requests.put(url, json=payload)
+        logging.info("Registered service: %s with IP: %s to Consul." % (svc, POD_IP))
+        return
+    except requests.ConnectionError:
+        logging.info("No consul agent found. Skipping registration.")
+        return
 
 def get_rpm():
     now = datetime.datetime.utcnow()
@@ -284,6 +302,7 @@ def crash():
 
 
 def main():
+    register_consul()
     app.run(debug=False, host="0.0.0.0", port=PORT)
 
 
