@@ -8,13 +8,46 @@ import os
 import random
 import signal
 import time
+import requests
 
 __version__ = "1.3"
 PORT = os.getenv("PORT", 5000)
 HOSTNAME = os.getenv("HOSTNAME")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+REQUEST_LIMIT = os.getenv("REQUEST_LIMIT", 5)
+CONSUL_IP = os.getenv("CONSUL_IP", "host.docker.internal")
+POD_IP = os.getenv("POD_IP")
 
 app = Flask(__name__)
+
+request_timestamps = []
+
+def register_consul():
+    url = "http://%s:8500/v1/catalog/register" % CONSUL_IP
+    svc = "%s-consul" % HOSTNAME
+    payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 80}}
+
+    logging.info(url)
+    logging.info(payload)
+    try:
+        r = requests.put(url, json=payload)
+        logging.info("Registered service: %s with IP: %s to Consul." % (svc, POD_IP))
+        return
+    except requests.ConnectionError:
+        logging.info("No consul agent found. Skipping registration.")
+        return
+
+def get_rpm():
+    now = datetime.datetime.utcnow()
+
+    count = 0
+
+    global request_timestamps
+    for t in request_timestamps:
+        delta = now - t
+        if delta.seconds <= 60:
+            count += 1
+    return count
 
 # Quote storage
 #
@@ -159,6 +192,37 @@ def statement():
     # return RichStatus.OK(quote="Telepresence rocks!")
     return RichStatus.OK(quote=random.choice(quotes))
 
+####
+# GET /limited/ calls get_rpm to get the requests per minute to the endpoint.
+# If less than REQUEST_LIMIT, it returns a random quote same as the method 
+# above. If greater, it returns a 500 to simulate an overloaded server.
+#
+# GET /limited/clear clears the global array that stores timestamps used to
+# check if a request is over the limit.
+
+
+@app.route("/limited/", methods=["GET"])
+@standard_handler
+def request_limited():
+
+    global request_timestamps
+    request_timestamps.append(datetime.datetime.utcnow())
+
+    if get_rpm() > int(REQUEST_LIMIT):
+        return "App Overloaded", 500
+    
+    return RichStatus.OK(quote=random.choice(quotes))
+
+@app.route("/limited/clear", methods=["GET"])
+@standard_handler
+def clear_timestamps():
+
+    global request_timestamps
+    request_timestamps = []
+
+    return RichStatus.OK()
+
+
 
 ####
 # GET /quote/quoteid returns a specific quote. 'quoteid' is the integer index
@@ -238,6 +302,7 @@ def crash():
 
 
 def main():
+    register_consul()
     app.run(debug=False, host="0.0.0.0", port=PORT)
 
 
