@@ -24,7 +24,7 @@ request_timestamps = []
 
 def register_consul():
     url = "http://%s:8500/v1/catalog/register" % CONSUL_IP
-    svc = "%s-consul" % HOSTNAME
+    svc = "qotm-consul"
     payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 5000}}
 
     logging.info(url)
