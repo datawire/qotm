@@ -10,7 +10,7 @@ import signal
 import time
 import requests
 
-__version__ = "1.3"
+__version__ = "1.7"
 PORT = os.getenv("PORT", 5000)
 HOSTNAME = os.getenv("HOSTNAME")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -25,7 +25,7 @@ request_timestamps = []
 def register_consul():
     url = "http://%s:8500/v1/catalog/register" % CONSUL_IP
     svc = "%s-consul" % HOSTNAME
-    payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 80}}
+    payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 5000}}
 
     logging.info(url)
     logging.info(payload)
