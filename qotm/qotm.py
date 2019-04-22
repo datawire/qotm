@@ -10,7 +10,7 @@ import signal
 import time
 import requests
 
-__version__ = "1.8"
+__version__ = "1.7"
 PORT = os.getenv("PORT", 5000)
 HOSTNAME = os.getenv("HOSTNAME")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
