@@ -23,15 +23,27 @@ app = Flask(__name__)
 request_timestamps = []
 
 def register_consul():
-    url = "http://%s:8500/v1/catalog/register" % CONSUL_IP
-    svc = "qotm-consul"
-    payload = {"Datacenter": "dc1", "Node": "qotm","Address": str(POD_IP),"Service": {"Service": str(svc), "Address": str(POD_IP), "Port": 5000}}
+    url = "http://%s:8500/v1/agent/service/register" % CONSUL_IP
 
-    logging.info(url)
-    logging.info(payload)
+    # Set JSON payload for registering service with consul
+    check_addr = "http://%s:5000/health" % POD_IP
+    payload = {
+                  "Name": "qotm-consul",
+                  "Address": str(POD_IP),
+                  "Port": 5000,
+                  "Check": {
+                    "HTTP": check_addr,
+                    "DeregisterCriticalServiceAfter": "1m",
+                    "Interval": "30s"
+                  }
+                }
+    logging.debug("Consul Agent URL: %s" % url)
+    logging.debug("Service registration payload: %s" % payload)
+
+    # Register qotm-consul service with consul
     try:
         r = requests.put(url, json=payload)
-        logging.info("Registered service: %s with IP: %s to Consul." % (svc, POD_IP))
+        logging.info("Registered service: qotm-consul with IP: %s to Consul." %  POD_IP)
         return
     except requests.ConnectionError:
         logging.info("No consul agent found. Skipping registration.")
