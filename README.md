@@ -2,10 +2,11 @@
 
 Supplemental material for Kubernetes Training.
 
-```
-kubectl apply -f https://raw.githubusercontent.com/datawire/qotm/master/kubernetes/qotm-deployment.yaml
-kubectl apply -f https://raw.githubusercontent.com/datawire/qotm/master/kubernetes/qotm-service.yaml
-```
+# Archived Repository
+
+This repository is no longer being actively maintained. Please see the [datawire/quote](https://github.com/datawire/quote) repo for 
+an actively maintined re-write of the quote of the moment service written in go.  
+
 
 # License
 
